@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マクロファージ刺激実験記録</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 30px;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+        }
+
+        .plate-selection {
+            margin-bottom: 25px;
+        }
+
+        .plate-selection h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+
+        .plate-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .plate-btn {
+            padding: 12px 20px;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .plate-btn:hover {
+            background: #3498db;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .plate-btn.active {
+            background: #3498db;
+            color: white;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .conditions-input {
+            margin-top: 25px;
+        }
+
+        .conditions-input h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+
+        .input-instructions {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+        }
+
+        .input-instructions p {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .excel-table-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            overflow: auto;
+            max-height: 400px;
+        }
+
+        .excel-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        .excel-table th,
+        .excel-table td {
+            border: 1px solid #e1e1e1;
+            padding: 0;
+            position: relative;
+            min-width: 80px;
+            height: 28px;
+        }
+
+        .excel-table th {
+            background: #f8f9fa;
+            color: #2c3e50;
+            font-weight: bold;
+            text-align: center;
+            font-size: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            height: 28px;
+            line-height: 28px;
+        }
+
+        .excel-table th.excel-row-header {
+            width: 50px;
+            min-width: 50px;
+            position: sticky;
+            left: 0;
+            z-index: 15;
+            background: #f8f9fa;
+            font-weight: bold;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            vertical-align: middle;
+            transform: none;
+        }
+
+        .excel-table th.excel-row-header.corner {
+            width: 50px;
+            min-width: 50px;
+            position: sticky;
+            left: 0;
+            z-index: 20;
+            background: #f8f9fa;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            vertical-align: middle;
+            transform: none;
+        }
+
+        .excel-table td.row-header {
+            background: #f8f9fa;
+            color: #2c3e50;
+            font-weight: bold;
+            text-align: center;
+            font-size: 12px;
+            width: 50px;
+            min-width: 50px;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+        }
+
+        .excel-cell-input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            padding: 4px 6px;
+            font-size: 12px;
+            background: transparent;
+            outline: none;
+            resize: none;
+        }
+
+        .excel-cell-input:focus {
+            background: #e3f2fd;
+            box-shadow: inset 0 0 0 2px #2196f3;
+        }
+
+        .excel-cell-input:hover {
+            background: #f5f5f5;
+        }
+
+        .excel-table td.selected {
+            background: #e3f2fd !important;
+            box-shadow: inset 0 0 0 2px #2196f3;
+        }
+
+        .plate-display {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            text-align: center;
+        }
+
+        .plate-display h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+
+        .plate-display-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+        }
+
+        .plate-container {
+            display: inline-block;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border: 4px solid #34495e;
+        }
+
+        .save-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .save-btn {
+            width: 200px;
+            height: 50px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform-style: preserve-3d;
+        }
+
+        .clipboard-btn {
+            background: linear-gradient(145deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .clipboard-btn:hover {
+            background: linear-gradient(145deg, #2ecc71, #27ae60);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 6px 20px rgba(39, 174, 96, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .download-btn {
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(145deg, #2980b9, #3498db);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 6px 20px rgba(52, 152, 219, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .save-btn:active {
+            transform: translateY(0);
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.2),
+                inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .save-icon {
+            font-size: 18px;
+        }
+
+        .save-text {
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .save-btn.success {
+            animation: successPulse 0.6s ease;
+        }
+
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .plate-grid {
+            display: grid;
+            gap: 12px;
+            padding: 15px;
+        }
+
+        .plate-6 { 
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+        .plate-12 { 
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+        }
+        .plate-24 { 
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+        }
+        .plate-48 { 
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+        }
+        .plate-96 { 
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+        }
+
+        .well {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #bdc3c7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ecf0f1;
+            font-size: 10px;
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: center;
+            line-height: 1.1;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            word-break: break-all;
+            padding: 4px;
+        }
+
+        .well:hover {
+            transform: scale(1.15);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        .well.filled {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border-color: #c0392b;
+        }
+
+        .well-tooltip {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .well:hover .well-tooltip {
+            opacity: 1;
+        }
+
+        .well-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #2c3e50;
+        }
+
+        .row-header {
+            position: absolute;
+            left: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .col-header {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 12px;
+        }
+
+        .plate-headers {
+            position: relative;
+        }
+
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: inline-block;
+            margin-right: 15px;
+            margin-bottom: 5px;
+        }
+
+        .legend-color {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+
+        .title-section {
+            margin-bottom: 25px;
+        }
+
+        .title-section h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+
+        .title-input {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #2c3e50;
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+        }
+
+        .title-input:focus {
+            outline: none;
+            border-color: #2980b9;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .title-input::placeholder {
+            color: #95a5a6;
+            font-style: italic;
+        }
+
+        .plate-actions {
+            margin-bottom: 20px;
+        }
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
+
+        .copy-btn:hover {
+            background: linear-gradient(135deg, #229954, #27ae60);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        }
+
+        .copy-btn {
+            transform: translateY(0);
+        }
+
+        .copy-btn.success {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            animation: successPulse 0.6s ease;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 1400px) {
+            .content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .plate-display-area {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+                grid-template-columns: 1fr;
+            }
+            
+            .well {
+                width: 45px;
+                height: 45px;
+                font-size: 8px;
+            }
+            
+            .plate-display-area {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .copy-btn-3d {
+                width: 60px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧬 マクロファージ刺激実験</h1>
+            <p>実験条件記録システム</p>
+        </div>
+        
+        <div class="content">
+            <div class="controls">
+                <div class="plate-selection">
+                    <h3>📋 プレート選択</h3>
+                    <div class="plate-buttons">
+                        <button class="plate-btn" onclick="selectPlate(6)">6ウェル</button>
+                        <button class="plate-btn" onclick="selectPlate(12)">12ウェル</button>
+                        <button class="plate-btn active" onclick="selectPlate(24)">24ウェル</button>
+                        <button class="plate-btn" onclick="selectPlate(48)">48ウェル</button>
+                        <button class="plate-btn" onclick="selectPlate(96)">96ウェル</button>
+                    </div>
+                </div>
+                
+                <div class="title-section">
+                    <h3>📝 実験タイトル</h3>
+                    <input type="text" 
+                           id="plateCustomTitle" 
+                           class="title-input" 
+                           placeholder="実験タイトルを入力してください"
+                           value="マクロファージ刺激実験">
+                </div>
+                
+                <div class="conditions-input">
+                    <h3>🧪 実験条件入力</h3>
+                    <div class="input-instructions">
+                        <p>💡 Excelからコピー&ペーストで一括入力可能です</p>
+                    </div>
+                    <div class="excel-table-container">
+                        <table class="excel-table" id="excelTable">
+                            <thead id="excelTableHead">
+                            </thead>
+                            <tbody id="excelTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plate-display">
+                <div class="plate-display-area">
+                    <div class="plate-container" id="plateContainer">
+                        <div class="plate-headers">
+                            <div class="plate-grid" id="plateGrid"></div>
+                        </div>
+                    </div>
+                    <div class="save-buttons">
+                        <button class="save-btn clipboard-btn" onclick="copyPlateToClipboard()">
+                            <span class="save-icon">📋</span>
+                            <span class="save-text">クリップボードに保存</span>
+                        </button>
+                        <button class="save-btn download-btn" onclick="downloadPlateAsPNG()">
+                            <span class="save-icon">💾</span>
+                            <span class="save-text">PCに保存 (PNG)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPlate = 24;
+        let conditions = {};
+
+        function selectPlate(wells) {
+            currentPlate = wells;
+            
+            // Update button states
+            document.querySelectorAll('.plate-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update displays
+            generateConditionsTable();
+            generatePlate();
+        }
+
+        function generateConditionsTable() {
+            const thead = document.getElementById('excelTableHead');
+            const tbody = document.getElementById('excelTableBody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            
+            let rows, cols;
+            if (currentPlate === 6) {
+                rows = 2; cols = 3;
+            } else if (currentPlate === 12) {
+                rows = 3; cols = 4;
+            } else if (currentPlate === 24) {
+                rows = 4; cols = 6;
+            } else if (currentPlate === 48) {
+                rows = 6; cols = 8;
+            } else if (currentPlate === 96) {
+                rows = 8; cols = 12;
+            }
+            
+            // 行ラベル配列を明示的に定義
+            const rowLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+            
+            // Create header row
+            const headerRow = document.createElement('tr');
+            const cornerCell = document.createElement('th');
+            cornerCell.className = 'excel-row-header corner';
+            headerRow.appendChild(cornerCell);
+            
+            for (let col = 1; col <= cols; col++) {
+                const headerCell = document.createElement('th');
+                headerCell.textContent = col;
+                headerRow.appendChild(headerCell);
+            }
+            thead.appendChild(headerRow);
+            
+            // Create data rows
+            for (let row = 0; row < rows; row++) {
+                const tr = document.createElement('tr');
+                const rowLabel = rowLabels[row];
+                
+                // Add row header as <th> with scope="row"
+                const rowHeaderCell = document.createElement('th');
+                rowHeaderCell.scope = 'row';
+                rowHeaderCell.className = 'excel-row-header';
+                rowHeaderCell.textContent = rowLabel;
+                tr.appendChild(rowHeaderCell);
+                
+                // Add data cells
+                for (let col = 1; col <= cols; col++) {
+                    const wellId = rowLabel + col;
+                    const td = document.createElement('td');
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'excel-cell-input';
+                    input.id = `cell-${wellId}`;
+                    input.setAttribute('data-well', wellId);
+                    input.value = conditions[wellId] || '';
+                    input.placeholder = '';
+                    input.addEventListener('input', () => updateConditionFromCell(wellId, input.value));
+                    input.addEventListener('paste', (e) => handleCellPaste(e, row, col-1));
+                    input.addEventListener('focus', () => selectCell(input));
+                    input.addEventListener('blur', () => deselectCell(input));
+                    
+                    td.appendChild(input);
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+        }
+
+        function updateConditionFromCell(wellId, value) {
+            if (value.trim()) {
+                conditions[wellId] = value.trim();
+            } else {
+                delete conditions[wellId];
+            }
+            updatePlateDisplay();
+        }
+
+        function selectCell(input) {
+            input.parentElement.classList.add('selected');
+        }
+
+        function deselectCell(input) {
+            input.parentElement.classList.remove('selected');
+        }
+
+        function handleCellPaste(event, startRow, startCol) {
+            event.preventDefault();
+            
+            // Get pasted data
+            const pastedData = (event.clipboardData || window.clipboardData).getData('text');
+            const rows = pastedData.split('\n').filter(row => row.trim() !== '');
+            
+            let currentRows, currentCols;
+            if (currentPlate === 6) {
+                currentRows = 2; currentCols = 3;
+            } else if (currentPlate === 12) {
+                currentRows = 3; currentCols = 4;
+            } else if (currentPlate === 24) {
+                currentRows = 4; currentCols = 6;
+            } else if (currentPlate === 48) {
+                currentRows = 6; currentCols = 8;
+            } else if (currentPlate === 96) {
+                currentRows = 8; currentCols = 12;
+            }
+            
+            // 行ラベル配列を使用
+            const rowLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+            
+            // Process each row of pasted data
+            rows.forEach((rowData, rowIndex) => {
+                const cells = rowData.split('\t'); // Excel uses tabs to separate columns
+                
+                cells.forEach((cellValue, colIndex) => {
+                    const targetRow = startRow + rowIndex;
+                    const targetCol = startCol + colIndex;
+                    
+                    // Check if target position is within bounds
+                    if (targetRow < currentRows && targetCol < currentCols) {
+                        const wellId = rowLabels[targetRow] + (targetCol + 1);
+                        const input = document.getElementById(`cell-${wellId}`);
+                        
+                        if (input) {
+                            input.value = cellValue.trim();
+                            updateConditionFromCell(wellId, cellValue.trim());
+                        }
+                    }
+                });
+            });
+            
+            // Show success message
+            showStatusMessage(`${rows.length}行 × ${Math.max(...rows.map(r => r.split('\t').length))}列のデータを貼り付けました`, 'success');
+        }
+
+        function generatePlate() {
+            const grid = document.getElementById('plateGrid');
+            grid.innerHTML = '';
+            grid.className = `plate-grid plate-${currentPlate}`;
+            
+            let rows, cols;
+            if (currentPlate === 6) {
+                rows = 2; cols = 3;
+            } else if (currentPlate === 12) {
+                rows = 3; cols = 4;
+            } else if (currentPlate === 24) {
+                rows = 4; cols = 6;
+            } else if (currentPlate === 48) {
+                rows = 6; cols = 8;
+            } else if (currentPlate === 96) {
+                rows = 8; cols = 12;
+            }
+            
+            // Add column headers
+            for (let col = 0; col < cols; col++) {
+                const header = document.createElement('div');
+                header.className = 'col-header';
+                header.textContent = col + 1;
+                header.style.gridColumn = col + 1;
+                header.style.gridRow = 0;
+                header.style.visibility = 'hidden'; // Hide column headers
+                grid.appendChild(header);
+            }
+            
+            // Add wells with row headers
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const wellId = String.fromCharCode(65 + row) + (col + 1);
+                    const well = document.createElement('div');
+                    well.className = 'well';
+                    well.id = `well-${wellId}`;
+                    well.style.position = 'relative';
+                    
+                    // Add row header for first column
+                    if (col === 0) {
+                        const rowHeader = document.createElement('div');
+                        rowHeader.className = 'row-header';
+                        rowHeader.textContent = String.fromCharCode(65 + row);
+                        well.appendChild(rowHeader);
+                    }
+                    
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'well-tooltip';
+                    tooltip.textContent = `${wellId}: ${conditions[wellId] || '条件未設定'}`;
+                    well.appendChild(tooltip);
+                    
+                    updateWellDisplay(well, wellId);
+                    grid.appendChild(well);
+                }
+            }
+        }
+
+        function updateWellDisplay(well, wellId) {
+            const condition = conditions[wellId];
+            if (condition) {
+                well.classList.add('filled');
+                well.textContent = condition.length > 12 ? condition.substring(0, 10) + '...' : condition;
+                well.title = `${wellId}: ${condition}`;
+            } else {
+                well.classList.remove('filled');
+                well.textContent = wellId;
+                well.title = `${wellId}: 条件未設定`;
+            }
+            
+            // Update tooltip
+            const tooltip = well.querySelector('.well-tooltip');
+            if (tooltip) {
+                tooltip.textContent = `${wellId}: ${condition || '条件未設定'}`;
+            }
+        }
+
+        function updatePlateDisplay() {
+            const wells = document.querySelectorAll('.well');
+            wells.forEach(well => {
+                const wellId = well.id.replace('well-', '');
+                updateWellDisplay(well, wellId);
+            });
+        }
+
+        // Initialize
+        generateConditionsTable();
+        generatePlate();
+
+        // Clipboard functionality (同期版)
+        function copyPlateToClipboard() {
+            const button = document.querySelector('.clipboard-btn');
+            const originalHTML = button.innerHTML;
+            
+            try {
+                const canvas = generatePlateCanvas(); // 同期関数を呼ぶ
+                
+                // 同期的に data URL を作成してクリップボードに書き込み
+                const dataURL = canvas.toDataURL('image/png', 0.95);
+                
+                // Data URLをBlobに変換（同期的）
+                const byteString = atob(dataURL.split(',')[1]);
+                const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) {
+                    ia[i] = byteString.charCodeAt(i);
+                }
+                const blob = new Blob([ab], {type: mimeString});
+                
+                // 同期的にクリップボードに書き込み（ユーザー操作の継続として）
+                navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]).then(() => {
+                    // Success feedback
+                    button.innerHTML = '<span class="save-icon">✅</span><span class="save-text">コピー完了！</span>';
+                    button.classList.add('success');
+                    showStatusMessage('プレート画像をクリップボードにコピーしました！', 'success');
+                    
+                    setTimeout(() => {
+                        button.innerHTML = originalHTML;
+                        button.classList.remove('success');
+                    }, 2000);
+                }).catch((err) => {
+                    console.error('クリップボードへのコピーに失敗:', err);
+                    button.innerHTML = '<span class="save-icon">❌</span><span class="save-text">コピー失敗</span>';
+                    showStatusMessage('クリップボードへのコピーに失敗しました', 'error');
+                    
+                    setTimeout(() => {
+                        button.innerHTML = originalHTML;
+                    }, 2000);
+                });
+                
+            } catch (err) {
+                console.error('クリップボードへのコピーに失敗:', err);
+                button.innerHTML = '<span class="save-icon">❌</span><span class="save-text">コピー失敗</span>';
+                showStatusMessage('クリップボードへのコピーに失敗しました', 'error');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                }, 2000);
+            }
+        }
+
+        // PC download functionality
+        function downloadPlateAsPNG() {
+            const button = document.querySelector('.download-btn');
+            const originalHTML = button.innerHTML;
+            
+            button.innerHTML = '<span class="save-icon">⏳</span><span class="save-text">生成中...</span>';
+            
+            try {
+                // 同期的に canvas を取得
+                const canvas = generatePlateCanvas();
+                
+                // 同期的に Data URL を作成
+                const dataURL = canvas.toDataURL('image/png', 0.95);
+                
+                // 同じタスク内でリンクをクリック
+                const link = document.createElement('a');
+                link.href = dataURL;
+                
+                const date = new Date().toISOString().split('T')[0];
+                const title = document.getElementById('plateCustomTitle').value || 'マクロファージ刺激実験';
+                const safeTitle = title.replace(/[^0-9A-Za-z_\-\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '_');
+                link.download = `${safeTitle}_${currentPlate}ウェル_${date}.png`;
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // 成功
+                button.innerHTML = '<span class="save-icon">✅</span><span class="save-text">保存完了！</span>';
+                button.classList.add('success');
+                showStatusMessage(`${link.download} をダウンロードしました！`, 'success');
+                
+            } catch (err) {
+                console.error('ファイル保存に失敗:', err);
+                button.innerHTML = '<span class="save-icon">❌</span><span class="save-text">保存失敗</span>';
+                showStatusMessage('ファイル保存に失敗しました。', 'error');
+            } finally {
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('success');
+                }, 1500);
+            }
+        }
+
+        // Shared canvas generation function (同期版)
+        function generatePlateCanvas() {
+            const plateContainer = document.getElementById('plateContainer');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            const rect = plateContainer.getBoundingClientRect();
+            canvas.width = rect.width * 2; // Higher resolution
+            canvas.height = rect.height * 2;
+            ctx.scale(2, 2);
+            
+            // Set background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, rect.width, rect.height);
+            
+            // Add title
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            const customTitle = document.getElementById('plateCustomTitle').value || 'マクロファージ刺激実験';
+            ctx.fillText(customTitle, rect.width / 2, 30);
+            
+            // Draw plate border
+            ctx.strokeStyle = '#34495e';
+            ctx.lineWidth = 4;
+            ctx.roundRect(20, 50, rect.width - 40, rect.height - 70, 15);
+            ctx.stroke();
+            
+            // Get plate dimensions
+            let rows, cols;
+            if (currentPlate === 6) {
+                rows = 2; cols = 3;
+            } else if (currentPlate === 12) {
+                rows = 3; cols = 4;
+            } else if (currentPlate === 24) {
+                rows = 4; cols = 6;
+            } else if (currentPlate === 48) {
+                rows = 6; cols = 8;
+            } else if (currentPlate === 96) {
+                rows = 8; cols = 12;
+            }
+            
+            // Calculate well positions
+            const plateStartX = 60;
+            const plateStartY = 90;
+            const plateWidth = rect.width - 120;
+            const plateHeight = rect.height - 140;
+            const wellSize = Math.min(plateWidth / cols, plateHeight / rows) * 0.8;
+            const gapX = (plateWidth - wellSize * cols) / (cols + 1);
+            const gapY = (plateHeight - wellSize * rows) / (rows + 1);
+            
+            // Draw column headers
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            for (let col = 0; col < cols; col++) {
+                const x = plateStartX + gapX + wellSize * col + gapX * col + wellSize / 2;
+                ctx.fillText((col + 1).toString(), x, plateStartY - 10);
+            }
+            
+            // Draw wells and row headers
+            const rowLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+            for (let row = 0; row < rows; row++) {
+                // Draw row header
+                ctx.fillStyle = '#2c3e50';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                const rowY = plateStartY + gapY + wellSize * row + gapY * row + wellSize / 2;
+                ctx.fillText(rowLabels[row], plateStartX - 25, rowY + 5);
+                
+                for (let col = 0; col < cols; col++) {
+                    const wellId = rowLabels[row] + (col + 1);
+                    const x = plateStartX + gapX + wellSize * col + gapX * col;
+                    const y = plateStartY + gapY + wellSize * row + gapY * row;
+                    
+                    // Draw well circle
+                    const condition = conditions[wellId];
+                    if (condition) {
+                        // Filled well
+                        const gradient = ctx.createLinearGradient(x, y, x + wellSize, y + wellSize);
+                        gradient.addColorStop(0, '#e74c3c');
+                        gradient.addColorStop(1, '#c0392b');
+                        ctx.fillStyle = gradient;
+                    } else {
+                        // Empty well
+                        ctx.fillStyle = '#ecf0f1';
+                    }
+                    
+                    ctx.beginPath();
+                    ctx.arc(x + wellSize / 2, y + wellSize / 2, wellSize / 2 - 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Draw well border
+                    ctx.strokeStyle = condition ? '#c0392b' : '#bdc3c7';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // Draw well text
+                    ctx.fillStyle = condition ? '#ffffff' : '#2c3e50';
+                    ctx.font = 'bold 10px Arial';
+                    ctx.textAlign = 'center';
+                    const text = condition ? (condition.length > 10 ? condition.substring(0, 8) + '...' : condition) : wellId;
+                    ctx.fillText(text, x + wellSize / 2, y + wellSize / 2 + 4);
+                }
+            }
+            
+            return canvas;
+        }
+        
+        function showStatusMessage(message, type) {
+            // Remove existing message
+            const existing = document.querySelector('.status-message');
+            if (existing) {
+                existing.remove();
+            }
+            
+            // Create new message
+            const messageEl = document.createElement('div');
+            messageEl.className = `status-message ${type}`;
+            messageEl.textContent = message;
+            document.body.appendChild(messageEl);
+            
+            // Show message
+            setTimeout(() => messageEl.classList.add('show'), 100);
+            
+            // Hide and remove message
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+                setTimeout(() => messageEl.remove(), 300);
+            }, 3000);
+        }
+        
+        // Add roundRect polyfill for older browsers
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.beginPath();
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                this.closePath();
+                return this;
+            };
+        }
+    </script>
+</body>
+</html>

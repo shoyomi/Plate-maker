@@ -372,7 +372,7 @@
             align-items: center;
             justify-content: center;
             background: #ecf0f1;
-            font-size: 10px;
+            font-size: 8px;
             font-weight: bold;
             color: #2c3e50;
             text-align: center;
@@ -380,9 +380,10 @@
             transition: all 0.3s ease;
             cursor: pointer;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
             word-break: break-all;
             padding: 4px;
+            hyphens: auto;
         }
 
         .well:hover {
@@ -868,7 +869,7 @@
             const condition = conditions[wellId];
             if (condition) {
                 well.classList.add('filled');
-                well.textContent = condition.length > 12 ? condition.substring(0, 10) + '...' : condition;
+                well.textContent = condition; // 省略なしで全文表示
                 well.title = `${wellId}: ${condition}`;
             } else {
                 well.classList.remove('filled');
@@ -1094,10 +1095,33 @@
                     
                     // Draw well text
                     ctx.fillStyle = condition ? '#ffffff' : '#2c3e50';
-                    ctx.font = 'bold 10px Arial';
+                    ctx.font = 'bold 8px Arial';
                     ctx.textAlign = 'center';
-                    const text = condition ? (condition.length > 10 ? condition.substring(0, 8) + '...' : condition) : wellId;
-                    ctx.fillText(text, x + wellSize / 2, y + wellSize / 2 + 4);
+                    const text = condition || wellId; // 省略なしで全文表示
+                    
+                    // 長いテキストの場合は複数行に分割
+                    if (condition && condition.length > 8) {
+                        const words = condition.split(' ');
+                        let line = '';
+                        let y = y + wellSize / 2 - 5;
+                        
+                        for (let n = 0; n < words.length; n++) {
+                            const testLine = line + words[n] + ' ';
+                            const metrics = ctx.measureText(testLine);
+                            const testWidth = metrics.width;
+                            
+                            if (testWidth > wellSize - 10 && n > 0) {
+                                ctx.fillText(line, x + wellSize / 2, y);
+                                line = words[n] + ' ';
+                                y += 10;
+                            } else {
+                                line = testLine;
+                            }
+                        }
+                        ctx.fillText(line, x + wellSize / 2, y);
+                    } else {
+                        ctx.fillText(text, x + wellSize / 2, y + wellSize / 2 + 4);
+                    }
                 }
             }
             
@@ -1144,4 +1168,5 @@
         }
     </script>
 </body>
+</html>
 </html>

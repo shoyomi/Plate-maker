@@ -364,13 +364,13 @@
         }
 
         .well {
-            width: 60px;
-            height: 60px;
+            min-width: 60px;
+            min-height: 60px;
+            height: auto;
             border: 2px solid #bdc3c7;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: grid;
+            place-items: center;
             background: #ecf0f1;
             font-size: 9px;
             font-weight: bold;
@@ -1094,31 +1094,16 @@
                     ctx.lineWidth = 2;
                     ctx.stroke();
                     
-                    // Draw well text
+                    // Draw well text with enhanced line breaking
                     ctx.fillStyle = condition ? '#ffffff' : '#2c3e50';
                     ctx.font = 'bold 9px Arial';
                     ctx.textAlign = 'center';
                     const text = condition || wellId;
                     
-                    // 長いテキストの場合は複数行に分割
+                    // 長いテキストの場合は改良された複数行分割を使用
                     if (condition && condition.length > 10) {
                         const maxWidth = wellSize - 8;
-                        const words = condition.split(' ');
-                        const lines = [];
-                        let currentLine = '';
-                        
-                        for (let word of words) {
-                            const testLine = currentLine + (currentLine ? ' ' : '') + word;
-                            const testWidth = ctx.measureText(testLine).width;
-                            
-                            if (testWidth > maxWidth && currentLine) {
-                                lines.push(currentLine);
-                                currentLine = word;
-                            } else {
-                                currentLine = testLine;
-                            }
-                        }
-                        if (currentLine) lines.push(currentLine);
+                        const lines = splitTextToLines(ctx, condition, maxWidth);
                         
                         // 複数行を描画
                         const lineHeight = 9;
@@ -1134,6 +1119,46 @@
             }
             
             return canvas;
+        }
+        
+        // 改良されたテキスト分割関数（文字単位の切り出しに対応）
+        function splitTextToLines(ctx, text, maxWidth) {
+            const words = text.split(' ');
+            const lines = [];
+            let line = '';
+            
+            for (let w of words) {
+                // 単語自体が長すぎるとき
+                if (ctx.measureText(w).width > maxWidth) {
+                    // 既存行を確定
+                    if (line) {
+                        lines.push(line);
+                        line = '';
+                    }
+                    // 文字単位で切り出し
+                    let chunk = '';
+                    for (let ch of w) {
+                        if (ctx.measureText(chunk + ch).width > maxWidth) {
+                            lines.push(chunk);
+                            chunk = ch;
+                        } else {
+                            chunk += ch;
+                        }
+                    }
+                    if (chunk) lines.push(chunk);
+                } else {
+                    // 通常の単語単位折り返し
+                    const test = line ? line + ' ' + w : w;
+                    if (ctx.measureText(test).width > maxWidth && line) {
+                        lines.push(line);
+                        line = w;
+                    } else {
+                        line = test;
+                    }
+                }
+            }
+            if (line) lines.push(line);
+            return lines;
         }
         
         function showStatusMessage(message, type) {

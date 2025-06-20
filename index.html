@@ -372,7 +372,7 @@
             align-items: center;
             justify-content: center;
             background: #ecf0f1;
-            font-size: 8px;
+            font-size: 9px;
             font-weight: bold;
             color: #2c3e50;
             text-align: center;
@@ -380,9 +380,9 @@
             transition: all 0.3s ease;
             cursor: pointer;
             position: relative;
-            overflow: visible;
-            word-break: break-all;
-            padding: 4px;
+            padding: 6px;
+            white-space: normal;
+            word-break: break-word;
             hyphens: auto;
         }
 
@@ -869,7 +869,8 @@
             const condition = conditions[wellId];
             if (condition) {
                 well.classList.add('filled');
-                well.textContent = condition; // 省略なしで全文表示
+                // 長さに関係なく全文表示
+                well.textContent = condition;
                 well.title = `${wellId}: ${condition}`;
             } else {
                 well.classList.remove('filled');
@@ -1095,32 +1096,39 @@
                     
                     // Draw well text
                     ctx.fillStyle = condition ? '#ffffff' : '#2c3e50';
-                    ctx.font = 'bold 8px Arial';
+                    ctx.font = 'bold 9px Arial';
                     ctx.textAlign = 'center';
-                    const text = condition || wellId; // 省略なしで全文表示
+                    const text = condition || wellId;
                     
                     // 長いテキストの場合は複数行に分割
-                    if (condition && condition.length > 8) {
+                    if (condition && condition.length > 10) {
+                        const maxWidth = wellSize - 8;
                         const words = condition.split(' ');
-                        let line = '';
-                        let y = y + wellSize / 2 - 5;
+                        const lines = [];
+                        let currentLine = '';
                         
-                        for (let n = 0; n < words.length; n++) {
-                            const testLine = line + words[n] + ' ';
-                            const metrics = ctx.measureText(testLine);
-                            const testWidth = metrics.width;
+                        for (let word of words) {
+                            const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                            const testWidth = ctx.measureText(testLine).width;
                             
-                            if (testWidth > wellSize - 10 && n > 0) {
-                                ctx.fillText(line, x + wellSize / 2, y);
-                                line = words[n] + ' ';
-                                y += 10;
+                            if (testWidth > maxWidth && currentLine) {
+                                lines.push(currentLine);
+                                currentLine = word;
                             } else {
-                                line = testLine;
+                                currentLine = testLine;
                             }
                         }
-                        ctx.fillText(line, x + wellSize / 2, y);
+                        if (currentLine) lines.push(currentLine);
+                        
+                        // 複数行を描画
+                        const lineHeight = 9;
+                        const startY = y + wellSize / 2 - (lines.length - 1) * lineHeight / 2;
+                        
+                        lines.forEach((line, index) => {
+                            ctx.fillText(line, x + wellSize / 2, startY + index * lineHeight);
+                        });
                     } else {
-                        ctx.fillText(text, x + wellSize / 2, y + wellSize / 2 + 4);
+                        ctx.fillText(text, x + wellSize / 2, y + wellSize / 2 + 3);
                     }
                 }
             }
@@ -1168,5 +1176,4 @@
         }
     </script>
 </body>
-</html>
 </html>
